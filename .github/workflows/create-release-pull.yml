@@ -1,4 +1,4 @@
-name: create-release-pull
+name: Create Release Pull
 
 on:
   workflow_dispatch:
