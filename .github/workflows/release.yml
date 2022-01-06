@@ -14,6 +14,13 @@ jobs:
   build:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    env:
+      prerelease: |
+        (
+          "next-eu"
+          "staging-na"
+        )
+
     steps:
       - uses: actions/checkout@v2
         with:
@@ -36,4 +43,4 @@ jobs:
           release_name: "${{ steps.get_tag.outputs.tag }} | Release [${{ github.ref_name }}]"
           body: "${{ github.event.pull_request.body }}"
           draft: false
-          prerelease: ${{ contains(['next-eu', 'staging-na'], github.ref_name) }}
+          prerelease: contains( env.prerelease, github.ref_name )
