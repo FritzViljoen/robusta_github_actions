@@ -85,15 +85,18 @@ jobs:
           title: ${{ steps.create_tag.outputs.new_tag }} | Release [staging]
           body: ${{ steps.compile_pr.outputs.pr_body }}
           source_branch: next
-          target_branch: staging
+          target_branch: staging-na
           label: github-action
 
       - name: comparing branches by revisions
         id: compare
         run: |
-          echo "Comparing branches by revisions..."
-          if [[ $(git rev-parse --revs-only next) == $(git rev-parse --revs-only staging) ]]; then
-            echo "::set-output name=message::[INFO] Both branches are the same. No action needed."  
+          SOURCE_BRANCH=next-eu
+          TARGET_BRANCH=staging-na
+          
+          echo -e "\nComparing branches by diff..."
+          if [[ -z $(git diff "origin/${TARGET_BRANCH}...origin/${SOURCE_BRANCH}") ]]; then
+            echo "::set-output name=message::[INFO] Both branches are the same. No action needed."
           fi
 
       - name: Post to a Slack channel
