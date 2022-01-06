@@ -95,7 +95,6 @@ jobs:
           body: ${{ steps.compile_pr.outputs.pr_body }}
           source_branch: ${{ github.event.inputs.source_branch }}
           target_branch: ${{ github.event.inputs.target_branch }}
-          label: github-action
 
       - name: comparing branches by revisions
         id: compare
