@@ -41,6 +41,10 @@ jobs:
         with:
           tag_name: "${{ steps.get_tag.outputs.tag }}"
           release_name: "${{ steps.get_tag.outputs.tag }} | Release [${{ github.ref_name }}]"
-          body: "${{ github.event.pull_request.body }}"
+          body: "${{ github.event.pull_request.body }}"\n
+                  contains( env.prerelease_branches, github.ref_name )\n
+                  ${{ env.prerelease_branches }} \n
+                  ${{ github.ref_name }}
+
           draft: false
           prerelease: contains( env.prerelease_branches, github.ref_name )
