@@ -73,7 +73,7 @@ jobs:
           
           # bump version
           major=$(echo $major + 1 | bc)
-          new="$major.$minor"
+          new="$major.$minor".$suffix
     
           echo "Pre-release = $pre_release"
           if $pre_release 
@@ -92,7 +92,7 @@ jobs:
             else
               build="1"; 
             fi
-            new="$new.$suffix$build"
+            new=""$major.$minor".$suffix$build"
           fi
 
           # prefix with 'v'
