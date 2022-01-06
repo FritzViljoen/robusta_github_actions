@@ -1,28 +1,11 @@
-name: create-pr
+name: create-pr-edge-next
 
 on:
   workflow_dispatch:
-    inputs:
-      source_branch:
-        type: choice
-        description: "source branch"
-        options:
-          - edge
-          - next-eu
-          - staging-na
-      target_branch:
-        type: choice
-        description: "target branch"
-        options:
-          - next-eu
-          - staging-na
-          - prod-na
-          - prod-eu
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v2
         with:
@@ -32,7 +15,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.16.0
         with:
           channel-id: ${{ secrets.SLACK_CHANNEL }}
-          slack-message: 'github-actions: Creating pull-request from ${{ github.event.inputs.source_branch }} to ${{ github.event.inputs.target_branch }}!'
+          slack-message: 'github-actions: Creating pull-request from edge to next!'
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
 
@@ -88,7 +71,7 @@ jobs:
       - name: compile pull request
         id: compile_pr
         run: |
-          output=$(ruby ./script/create-github-pr ${{ github.event.inputs.target_branch }} ${{ github.event.inputs.source_branch }}) 
+          output=$(ruby ./script/create-github-pr next-eu edge) 
           output="${output//'%'/'%25'}"
           output="${output//$'\n'/'%0A'}"
           output="${output//$'\r'/'%0D'}" 
@@ -99,16 +82,17 @@ jobs:
         uses: devops-infra/action-pull-request@v0.4.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          title: ${{ steps.create_tag.outputs.new_tag }} | Release [${{ github.event.inputs.target_branch }}]
+          title: ${{ steps.create_tag.outputs.new_tag }} | Release [next]
           body: ${{ steps.compile_pr.outputs.pr_body }}
-          source_branch: ${{ github.event.inputs.source_branch }}
-          target_branch: ${{ github.event.inputs.target_branch }}
+          source_branch: edge
+          target_branch: next-eu
+          label: github-action
 
       - name: comparing branches by revisions
         id: compare
         run: |
-          SOURCE_BRANCH=${{ github.event.inputs.source_branch }}
-          TARGET_BRANCH=${{ github.event.inputs.target_branch }}
+          SOURCE_BRANCH=edge
+          TARGET_BRANCH=next-eu
           
           echo -e "\nComparing branches by diff..."
           if [[ -z $(git diff "origin/${TARGET_BRANCH}...origin/${SOURCE_BRANCH}") ]]; then
