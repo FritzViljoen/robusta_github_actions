@@ -1,4 +1,4 @@
-name: create-release-pr
+name: create-release-pull
 
 on:
   workflow_dispatch:
