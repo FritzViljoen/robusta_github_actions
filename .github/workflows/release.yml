@@ -1,16 +1,18 @@
-name: release-prod
+name: release
 
 on:
   pull_request:
     types:
-     - closed
-     - labeled
+      - closed
     branches:
-      - prod
+      - next-eu
+      - staging-na
+      - prod-na
+      - prod-eu
 
 jobs:
   build:
-    if: github.event.pull_request.merged == true && contains( github.event.pull_request.labels.*.name, 'github-action')
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -31,8 +33,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.get_tag.outputs.tag }}
-          release_name: ${{ steps.get_tag.outputs.tag }} | Release [prod]
+          release_name: ${{ steps.get_tag.outputs.tag }} | Release [$GITHUB_REF]
           body: ${{ github.event.pull_request.body }}
           draft: false
-          prerelease: false
-
+          prerelease: ${{ $GITHUB_REF == "prod-na" || $GITHUB_REF == "prod-eu" }}
