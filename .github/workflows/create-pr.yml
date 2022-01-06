@@ -27,7 +27,6 @@ jobs:
       prerelease_branches: (next-eu, staging-na)
       source_branch: ${{ github.event.inputs.source_branch }}
       target_branch: ${{ github.event.inputs.target_branch }}
-      suffix: rc
 
     steps:
       - uses: actions/checkout@v2
@@ -48,18 +47,17 @@ jobs:
           # config
           pre_release=${{ contains( env.prerelease_branches, env.target_branch ) }}
 
-          suffix=${{ env.suffix }}
-            case ${{ env.target_branch }} in
-              next-eu)
-                suffix=rc
-              ;;
-              staging-na)
-                suffix=staging
-              ;; 
-              *)
-                suffix=${{ env.target_branch }}
-              ;;
-            esac
+          case ${{ env.target_branch }} in
+            next-eu)
+              suffix=rc
+            ;;
+            staging-na)
+              suffix=staging
+            ;; 
+            *)
+              suffix=${{ env.target_branch }}
+            ;;
+          esac
 
           # fetch tags
           git fetch --tags
