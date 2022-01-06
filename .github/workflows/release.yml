@@ -36,4 +36,4 @@ jobs:
           release_name: "${{ steps.get_tag.outputs.tag }} | Release [${{ github.head_ref }}]"
           body: "${{ github.event.pull_request.body }}"
           draft: false
-          prerelease: !startsWith( ${{ github.head_ref }}, 'prod' )
+          prerelease: !${{ startsWith( github.head_ref, 'prod' ) }}
