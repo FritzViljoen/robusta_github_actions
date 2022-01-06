@@ -43,4 +43,4 @@ jobs:
                   ${{ github.ref_name }}"
 
           draft: false
-          prerelease: contains( env.prerelease_branches, github.ref_name )
+          prerelease: ${{ contains( env.prerelease_branches, github.ref_name ) }}
