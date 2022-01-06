@@ -24,10 +24,11 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      prerelease_branches: (next-eu, staging-na)
       source_branch: ${{ github.event.inputs.source_branch }}
       target_branch: ${{ github.event.inputs.target_branch }}
       suffix: rc
-      pre_release: true
+      pre_release: ${{ contains( env.prerelease_branches, env.target_branch ) }}
 
     steps:
       - uses: actions/checkout@v2
@@ -113,11 +114,8 @@ jobs:
       - name: comparing branches by revisions
         id: compare
         run: |
-          SOURCE_BRANCH=${{ env.source_branch }}
-          TARGET_BRANCH=${{ env.target_branch }}
-          
           echo -e "\nComparing branches by diff..."
-          if [[ -z $(git diff "origin/${TARGET_BRANCH}...origin/${SOURCE_BRANCH}") ]]; then
+          if [[ -z $(git diff "origin/${{ env.target_branch }}...origin/${{ env.source_branch }}") ]]; then
             echo "::set-output name=message::[INFO] Both branches are the same. No action needed."
           fi
 
