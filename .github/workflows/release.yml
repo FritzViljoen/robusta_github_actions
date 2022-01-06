@@ -1,0 +1,42 @@
+name: release
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - next-eu
+      - staging-na
+      - prod-na
+      - prod-eu
+
+jobs:
+  build:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    env:
+      prerelease_branches: (next-eu, staging-na)
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: '0'
+
+      - name: get tag
+        id: get_tag
+        run: |
+          tag=$(echo "${{ github.event.pull_request.title }}" | cut -d' ' -f 1)
+          echo $tag
+          echo "::set-output name=tag::$tag"
+
+      - name: create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "${{ steps.get_tag.outputs.tag }}"
+          release_name: "${{ steps.get_tag.outputs.tag }} | Release [${{ github.ref_name }}]"
+          body: "${{ github.event.pull_request.body }}"
+          draft: false
+          prerelease: ${{ contains( env.prerelease_branches, github.ref_name ) }}
