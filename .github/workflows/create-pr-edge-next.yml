@@ -1,33 +1,11 @@
-name: create-pr
+name: create-pr-edge-next
 
 on:
   workflow_dispatch:
-    inputs:
-      source_branch:
-        type: choice
-        description: "source branch"
-        options:
-          - edge
-          - next-eu
-          - staging-na
-      target_branch:
-        type: choice
-        description: "target branch"
-        options:
-          - next-eu
-          - staging-na
-          - prod-na
-          - prod-eu
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    env:
-      prerelease_branches: (next-eu, staging-na)
-      source_branch: ${{ github.event.inputs.source_branch }}
-      target_branch: ${{ github.event.inputs.target_branch }}
-
     steps:
       - uses: actions/checkout@v2
         with:
@@ -37,7 +15,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.16.0
         with:
           channel-id: ${{ secrets.SLACK_CHANNEL }}
-          slack-message: 'github-actions: Creating pull-request from ${{ env.source_branch }} to ${{ env.target_branch }}!'
+          slack-message: 'github-actions: Creating pull-request from edge to next!'
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
 
@@ -45,19 +23,8 @@ jobs:
         id: create_tag
         run: |
           # config
-          pre_release=${{ contains( env.prerelease_branches, env.target_branch ) }}
-
-          case ${{ env.target_branch }} in
-            next-eu)
-              suffix=rc
-            ;;
-            staging-na)
-              suffix=staging
-            ;; 
-            *)
-              suffix=${{ env.target_branch }}
-            ;;
-          esac
+          suffix=rc
+          pre_release=true
 
           # fetch tags
           git fetch --tags
@@ -104,7 +71,7 @@ jobs:
       - name: compile pull request
         id: compile_pr
         run: |
-          output=$(ruby ./script/create-github-pr ${{ env.target_branch }} ${{ env.source_branch }}) 
+          output=$(ruby ./script/create-github-pr next-eu edge) 
           output="${output//'%'/'%25'}"
           output="${output//$'\n'/'%0A'}"
           output="${output//$'\r'/'%0D'}" 
@@ -115,16 +82,20 @@ jobs:
         uses: devops-infra/action-pull-request@v0.4.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          title: ${{ steps.create_tag.outputs.new_tag }} | Release [${{ env.target_branch }}]
+          title: ${{ steps.create_tag.outputs.new_tag }} | Release [next]
           body: ${{ steps.compile_pr.outputs.pr_body }}
-          source_branch: ${{ env.source_branch }}
-          target_branch: ${{ env.target_branch }}
+          source_branch: edge
+          target_branch: next-eu
+          label: github-action
 
       - name: comparing branches by revisions
         id: compare
         run: |
+          SOURCE_BRANCH=edge
+          TARGET_BRANCH=next-eu
+          
           echo -e "\nComparing branches by diff..."
-          if [[ -z $(git diff "origin/${{ env.target_branch }}...origin/${{ env.source_branch }}") ]]; then
+          if [[ -z $(git diff "origin/${TARGET_BRANCH}...origin/${SOURCE_BRANCH}") ]]; then
             echo "::set-output name=message::[INFO] Both branches are the same. No action needed."
           fi
 
