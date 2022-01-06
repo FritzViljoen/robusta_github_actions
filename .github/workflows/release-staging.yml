@@ -1,0 +1,37 @@
+name: release-staging
+
+on:
+  pull_request:
+    types:
+      - closed
+      - labeled
+    branches:
+      - staging
+
+jobs:
+  build:
+    if: github.event.pull_request.merged == true && contains( github.event.pull_request.labels.*.name, 'github-action')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: '0'
+
+      - name: get tag
+        id: get_tag
+        run: |
+          tag=$(echo "${{ github.event.pull_request.title }}" | cut -d' ' -f 1)
+          echo $tag
+          echo "::set-output name=tag::$tag"
+
+      - name: create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.get_tag.outputs.tag }}
+          release_name: ${{ steps.get_tag.outputs.tag }} | Release [staging]
+          body: ${{ github.event.pull_request.body }}
+          draft: false
+          prerelease: true
