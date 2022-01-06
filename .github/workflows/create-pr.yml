@@ -23,6 +23,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      source_branch: ${{ github.event.inputs.source_branch }}
+      target_branch: ${{ github.event.inputs.target_branch }}
+      suffix: rc
+      pre_release: true
+
     steps:
       - uses: actions/checkout@v2
         with:
@@ -32,7 +38,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.16.0
         with:
           channel-id: ${{ secrets.SLACK_CHANNEL }}
-          slack-message: 'github-actions: Creating pull-request from ${{ github.event.inputs.source_branch }} to ${{ github.event.inputs.target_branch }}!'
+          slack-message: 'github-actions: Creating pull-request from ${{ env.source_branch }} to ${{ env.target_branch }}!'
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
 
@@ -40,8 +46,8 @@ jobs:
         id: create_tag
         run: |
           # config
-          suffix=rc
-          pre_release=true
+          suffix=${{ env.suffix }}
+          pre_release=${{ env.pre_release }}
 
           # fetch tags
           git fetch --tags
@@ -88,7 +94,7 @@ jobs:
       - name: compile pull request
         id: compile_pr
         run: |
-          output=$(ruby ./script/create-github-pr ${{ github.event.inputs.target_branch }} ${{ github.event.inputs.source_branch }}) 
+          output=$(ruby ./script/create-github-pr ${{ env.target_branch }} ${{ env.source_branch }}) 
           output="${output//'%'/'%25'}"
           output="${output//$'\n'/'%0A'}"
           output="${output//$'\r'/'%0D'}" 
@@ -99,16 +105,16 @@ jobs:
         uses: devops-infra/action-pull-request@v0.4.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          title: ${{ steps.create_tag.outputs.new_tag }} | Release [${{ github.event.inputs.target_branch }}]
+          title: ${{ steps.create_tag.outputs.new_tag }} | Release [${{ env.target_branch }}]
           body: ${{ steps.compile_pr.outputs.pr_body }}
-          source_branch: ${{ github.event.inputs.source_branch }}
-          target_branch: ${{ github.event.inputs.target_branch }}
+          source_branch: ${{ env.source_branch }}
+          target_branch: ${{ env.target_branch }}
 
       - name: comparing branches by revisions
         id: compare
         run: |
-          SOURCE_BRANCH=${{ github.event.inputs.source_branch }}
-          TARGET_BRANCH=${{ github.event.inputs.target_branch }}
+          SOURCE_BRANCH=${{ env.source_branch }}
+          TARGET_BRANCH=${{ env.target_branch }}
           
           echo -e "\nComparing branches by diff..."
           if [[ -z $(git diff "origin/${TARGET_BRANCH}...origin/${SOURCE_BRANCH}") ]]; then
