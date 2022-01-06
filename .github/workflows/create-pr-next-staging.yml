@@ -1,0 +1,108 @@
+name: create-pr-next-staging
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: '0'
+
+      - name: Post to a Slack channel
+        uses: slackapi/slack-github-action@v1.16.0
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL }}
+          slack-message: 'github-actions: Creating pull-request from next to staging!'
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
+
+      - name: create tag
+        id: create_tag
+        run: |
+          # config
+          suffix=staging
+          pre_release=true
+          
+          # fetch tags
+          git fetch --tags
+          
+          # get latest tag
+          tag=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^v?[0-9]+\.[0-9]+$" | head -n1)
+          regex="v([0-9]+).([0-9]+)"
+          if [[ $tag =~ $regex ]]; then
+            major="${BASH_REMATCH[1]}"
+            minor="${BASH_REMATCH[2]}"
+          fi
+          echo found Tag $tag
+          
+          # bump version
+          major=$(echo $major + 1 | bc)
+          new=$major.$minor
+          
+          echo "Pre-release = $pre_release"
+          if $pre_release 
+          then
+            pre_tag=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^v?[0-9]+\.[0-9]+(.$suffix[0-9]+)?$" | head -n1)
+            regex="v([0-9]+).([0-9]+)((.$suffix)([0-9]+))?"
+            if [[ $pre_tag =~ $regex ]]; then
+              build="${BASH_REMATCH[5]}"
+            fi
+            echo found Pre-release Tag $pre_tag
+          
+            # Already a prerelease available, bump it
+            if [[ "$pre_tag" == *"$new"* ]]
+            then
+              build=$(echo $build + 1 | bc);
+            else
+              build="1"; 
+            fi
+            new="$new.$suffix$build"
+          fi
+
+          # prefix with 'v'
+          new="v$new"
+          
+          # set outputs
+          echo ::set-output name=new_tag::$new
+
+      - name: compile pull request
+        id: compile_pr
+        run: |
+          output=$(ruby ./script/create-github-pr staging next) 
+          output="${output//'%'/'%25'}"
+          output="${output//$'\n'/'%0A'}"
+          output="${output//$'\r'/'%0D'}" 
+          echo "::set-output name=pr_body::$output"
+
+      - name: create pull request
+        id: create_pr
+        uses: devops-infra/action-pull-request@v0.4.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          title: ${{ steps.create_tag.outputs.new_tag }} | Release [staging]
+          body: ${{ steps.compile_pr.outputs.pr_body }}
+          source_branch: next
+          target_branch: staging
+          label: github-action
+
+      - name: comparing branches by revisions
+        id: compare
+        run: |
+          echo "Comparing branches by revisions..."
+          if [[ $(git rev-parse --revs-only next) == $(git rev-parse --revs-only staging) ]]; then
+            echo "::set-output name=message::[INFO] Both branches are the same. No action needed."  
+          fi
+
+      - name: Post to a Slack channel
+        uses: slackapi/slack-github-action@v1.16.0
+        if: ${{ !contains(steps.create_pr.outputs.url, 'github') }}
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL }}
+          slack-message: "github-actions: *:skull_and_crossbones:Pull request not created!!!:skull_and_crossbones:* \n
+          ${{ steps.compare.outputs.message }} \n
+          https://github.com/${{ github.repository }}/actions"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
