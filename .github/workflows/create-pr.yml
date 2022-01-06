@@ -28,7 +28,6 @@ jobs:
       source_branch: ${{ github.event.inputs.source_branch }}
       target_branch: ${{ github.event.inputs.target_branch }}
       suffix: rc
-      pre_release: ${{ contains( env.prerelease_branches, env.target_branch ) }}
 
     steps:
       - uses: actions/checkout@v2
@@ -47,8 +46,20 @@ jobs:
         id: create_tag
         run: |
           # config
+          pre_release=${{ contains( env.prerelease_branches, env.target_branch ) }}
+
           suffix=${{ env.suffix }}
-          pre_release=${{ env.pre_release }}
+            case ${{ env.target_branch }} in
+              next-eu)
+                suffix=rc
+              ;;
+              staging-na)
+                suffix=staging
+              ;; 
+              *)
+                suffix=${{ env.target_branch }}
+              ;;
+            esac
 
           # fetch tags
           git fetch --tags
