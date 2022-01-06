@@ -33,7 +33,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: "${{ steps.get_tag.outputs.tag }}"
-          release_name: "${{ steps.get_tag.outputs.tag }} | Release [${{ github.head_ref }}]"
+          release_name: "${{ steps.get_tag.outputs.tag }} | Release [${{ github.ref_name }}]"
           body: "${{ github.event.pull_request.body }}"
           draft: false
-          prerelease: contains(['next-eu', 'staging-na'], github.head_ref)
+          prerelease: contains(['next-eu', 'staging-na'], github.ref_name)
