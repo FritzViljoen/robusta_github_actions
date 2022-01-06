@@ -32,8 +32,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.get_tag.outputs.tag }}
-          release_name: ${{ steps.get_tag.outputs.tag }} | Release [$GITHUB_REF]
-          body: ${{ github.event.pull_request.body }}
+          tag_name: "${{ steps.get_tag.outputs.tag }}"
+          release_name: "${{ steps.get_tag.outputs.tag }} | Release [${{ github.head_ref }}]"
+          body: "${{ github.event.pull_request.body }}"
           draft: false
-          prerelease: startsWith( $GITHUB_REF, 'prod' )
+          prerelease: !startsWith( ${{ github.head_ref }}, 'prod' )
