@@ -37,13 +37,13 @@ jobs:
         run: |
           case ${{ env.target_branch }} in
             next-eu)
-              echo "::set-env name=source_branch::edge"
+              echo "source_branch=edge" >> $GITHUB_ENV
             ;;
             staging-na)
-              echo "::set-env name=source_branch::next-eu"
+              echo "source_branch=next-eu" >> $GITHUB_ENV
             ;;
             *)
-              echo "::set-env name=source_branch::staging-na"
+              echo "source_branch=staging-na" >> $GITHUB_ENV
             ;;
           esac 
 
