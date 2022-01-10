@@ -94,9 +94,6 @@ jobs:
             minor)
               minor=$(echo $minor + 1 | bc);
             ;;
-            *)
-              none
-            ;;
           esac
           new="$major.$minor.$suffix"
 
