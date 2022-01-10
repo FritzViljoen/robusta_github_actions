@@ -1,4 +1,4 @@
-name: Auto Create Release
+name: Create Release (Auto)
 
 on:
   pull_request:
