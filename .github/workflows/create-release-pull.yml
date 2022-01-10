@@ -79,11 +79,11 @@ jobs:
           echo found Tag $tag
 
           # bump version
-          if [[ ${{ env.version_bump }} == "major" ]]; 
+          if [[ ${{ env.version_bump }} == "minor" ]]; 
           then
-            major=$(echo $major + 1 | bc);
-          else
             minor=$(echo $minor + 1 | bc);
+          else
+            major=$(echo $major + 1 | bc);
           fi
           new="$major.$minor.$suffix"
 
