@@ -1,4 +1,4 @@
-name: create-release-pull
+name: Create Release Pull
 
 on:
   workflow_dispatch:
@@ -18,6 +18,12 @@ on:
           - staging-na
           - prod-na
           - prod-eu
+      version_bump:
+        type: choice
+        description: "version bump"
+        options:
+          - major
+          - minor
 
 jobs:
   build:
@@ -27,6 +33,7 @@ jobs:
       prerelease_branches: (next-eu, staging-na)
       source_branch: ${{ github.event.inputs.source_branch }}
       target_branch: ${{ github.event.inputs.target_branch }}
+      version_bump: ${{ github.event.inputs.version_bump }}
 
     steps:
       - uses: actions/checkout@v2
@@ -53,7 +60,7 @@ jobs:
             ;;
             staging-na)
               suffix=staging
-            ;; 
+            ;;
             *)
               suffix=${{ env.target_branch }}
             ;;
@@ -61,7 +68,7 @@ jobs:
 
           # fetch tags
           git fetch --tags
-          
+
           # get latest tag
           tag=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^v?[0-9]+\.[0-9].prod-na+$" | head -n1)
           regex="v([0-9]+).([0-9]+).prod-na"
@@ -70,13 +77,18 @@ jobs:
             minor="${BASH_REMATCH[2]}"
           fi
           echo found Tag $tag
-          
+
           # bump version
-          major=$(echo $major + 1 | bc)
+          if [[ ${{ env.version_bump }} == "minor" ]]; 
+          then
+            minor=$(echo $minor + 1 | bc);
+          else
+            major=$(echo $major + 1 | bc);
+          fi
           new="$major.$minor.$suffix"
-    
+
           echo "Pre-release = $pre_release"
-          if $pre_release 
+          if $pre_release
           then
             pre_tag=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^v?[0-9]+\.[0-9]+(.$suffix[0-9]+)?$" | head -n1)
             regex="v([0-9]+).([0-9]+)((.$suffix)([0-9]+))?"
@@ -84,30 +96,30 @@ jobs:
               build="${BASH_REMATCH[5]}"
             fi
             echo found Pre-release Tag $pre_tag
-          
+
             # Already a prerelease available, bump it
             if [[ "$pre_tag" == *"$new"* ]]
             then
               build=$(echo $build + 1 | bc);
             else
-              build="1"; 
+              build="1";
             fi
             new=""$major.$minor".$suffix$build"
           fi
 
           # prefix with 'v'
           new="v$new"
-          
+
           # set outputs
           echo ::set-output name=new_tag::$new
 
       - name: compile pull request
         id: compile_pr
         run: |
-          output=$(ruby ./script/create-github-pr ${{ env.target_branch }} ${{ env.source_branch }}) 
+          output=$(ruby ./script/create-github-pr ${{ env.target_branch }} ${{ env.source_branch }})
           output="${output//'%'/'%25'}"
           output="${output//$'\n'/'%0A'}"
-          output="${output//$'\r'/'%0D'}" 
+          output="${output//$'\r'/'%0D'}"
           echo "::set-output name=pr_body::$output"
 
       - name: create pull request
