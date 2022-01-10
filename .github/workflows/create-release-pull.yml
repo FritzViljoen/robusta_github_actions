@@ -89,11 +89,12 @@ jobs:
           case ${{ env.version_bump }} in
             major)
               major=$(echo $major + 1 | bc);
+              minor="1"
             ;;
             minor)
               minor=$(echo $minor + 1 | bc);
             ;;
-            bump)
+            *)
               none
             ;;
           esac
