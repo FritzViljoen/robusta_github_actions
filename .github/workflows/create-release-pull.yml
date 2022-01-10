@@ -15,7 +15,7 @@ on:
         type: choice
         description: "version bump"
         options:
-          - build
+          - default
           - minor
           - major
 
@@ -60,17 +60,11 @@ jobs:
         run: |
           # config
           pre_release=${{ contains( env.prerelease_branches, env.target_branch ) }}
-
+          suffix=rc
           case ${{ env.target_branch }} in
-            next-eu)
-              suffix=rc
-            ;;
-            staging-na)
-              suffix=staging
-            ;;
-            *)
-              suffix=${{ env.target_branch }}
-            ;;
+            staging-na) branch_suffix=.staging ;;
+            prod-na)    branch_suffix=.prod-na ;;
+            prod-eu)    branch_suffix=.prod-eu ;;
           esac
 
           # fetch tags
@@ -89,19 +83,19 @@ jobs:
           case ${{ env.version_bump }} in
             major)
               major=$(echo $major + 1 | bc);
-              minor="1"
+              minor="1";
             ;;
             minor)
               minor=$(echo $minor + 1 | bc);
             ;;
           esac
-          new="$major.$minor.$suffix"
+          new="$major.$minor"
 
           echo "Pre-release = $pre_release"
           if $pre_release
           then
-            pre_tag=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^v?[0-9]+\.[0-9]+(.$suffix[0-9]+)?$" | head -n1)
-            regex="v([0-9]+).([0-9]+)((.$suffix)([0-9]+))?"
+            pre_tag=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^v?[0-9]+\.[0-9]+(.$suffix[0-9]+)$branch_suffix$" | head -n1)
+            regex="v([0-9]+).([0-9]+)((.$suffix)([0-9]+)$branch_suffix)"
             if [[ $pre_tag =~ $regex ]]; then
               build="${BASH_REMATCH[5]}"
             fi
@@ -114,7 +108,9 @@ jobs:
             else
               build="1";
             fi
-            new=""$major.$minor".$suffix$build"
+            new=""$major.$minor".$suffix$build$branch_suffix"
+          else 
+            new=""$major.$minor"$branch_suffix"
           fi
 
           # prefix with 'v'
