@@ -79,7 +79,7 @@ jobs:
           echo found Tag $tag
 
           # bump version
-          if [[ ${{ env.target_branch }} == major ]]; 
+          if [[ ${{ env.target_branch }} == "major" ]]; 
           then
             major=$(echo $major + 1 | bc);
           else
