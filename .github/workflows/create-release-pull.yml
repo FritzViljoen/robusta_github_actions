@@ -33,7 +33,7 @@ jobs:
         with:
           fetch-depth: '0'
 
-      - name: Set Source Branch
+      - name: Set source branch
         run: |
           case ${{ env.target_branch }} in
             next-eu)
@@ -47,7 +47,7 @@ jobs:
             ;;
           esac 
 
-      - name: Post to a Slack channel
+      - name: Post to a slack channel
         uses: slackapi/slack-github-action@v1.16.0
         with:
           channel-id: ${{ secrets.SLACK_CHANNEL }}
@@ -55,7 +55,7 @@ jobs:
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
 
-      - name: create tag
+      - name: Create tag
         id: create_tag
         run: |
           # config
@@ -123,7 +123,7 @@ jobs:
           # set outputs
           echo ::set-output name=new_tag::$new
 
-      - name: compile pull request
+      - name: Compile pull request
         id: compile_pr
         run: |
           output=$(ruby ./script/create-github-pr ${{ env.target_branch }} ${{ env.source_branch }})
@@ -132,7 +132,7 @@ jobs:
           output="${output//$'\r'/'%0D'}"
           echo "::set-output name=pr_body::$output"
 
-      - name: create pull request
+      - name: Create pull request
         id: create_pr
         uses: devops-infra/action-pull-request@v0.4.2
         with:
@@ -142,7 +142,7 @@ jobs:
           source_branch: ${{ env.source_branch }}
           target_branch: ${{ env.target_branch }}
 
-      - name: comparing branches by revisions
+      - name: Comparing branches by revisions
         id: compare
         run: |
           echo -e "\nComparing branches by diff..."
@@ -150,7 +150,7 @@ jobs:
             echo "::set-output name=message::[INFO] Both branches are the same. No action needed."
           fi
 
-      - name: Post to a Slack channel
+      - name: Post to a slack channel
         uses: slackapi/slack-github-action@v1.16.0
         if: ${{ !contains(steps.create_pr.outputs.url, 'github') }}
         with:
