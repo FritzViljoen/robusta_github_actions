@@ -20,7 +20,7 @@ pull_requests.reverse.each do |pr|
   sha1, num = pr.split(' ')
 
   jira_pr = `git show --format=medium #{sha1}`.scrub.strip
-  matches = jira_pr.split("\n").last.match(/(RPLUS|FEATURE)[\s-]([^\s]+)([\s\|]+)(.+)/i)
+  matches = jira_pr.split("\n").last.match(/(?:RPLUS|FEATURE)[\s-]([^\s\|]+)(?:[\s\|]+)(.+)/i)
 
   next unless matches
 
