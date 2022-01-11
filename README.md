@@ -1,2 +1,2 @@
 # robusta_github_actions
-hotfix time
+check pr script
