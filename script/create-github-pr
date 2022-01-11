@@ -43,8 +43,6 @@ Tempfile.open('pull-request-message') do |message|
 
   migrations.each { |m| message.write "#{m}\n" }
 
-  message.flush
   message.rewind
-
   puts message.readlines
 end
