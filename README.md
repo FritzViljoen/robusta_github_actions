@@ -1,2 +1,2 @@
 # robusta_github_actions
-lets make sure
+test git fetch --tags
