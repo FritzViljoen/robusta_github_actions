@@ -18,6 +18,9 @@ on:
           - default
           - minor
           - major
+          - hotfix1
+          - hotfix2
+          - hotfix3
 
 jobs:
   build:
@@ -83,20 +86,39 @@ jobs:
             major)
               major=$(echo $major + 1 | bc);
               minor="1";
+              new="$major.$minor"
             ;;
             minor)
               minor=$(echo $minor + 1 | bc);
+              new="$major.$minor"
+            ;;
+            hotfix*)
+              hotfix_version=echo ${{ env.version_bump }} | grep -Eo '[0-9]+$'
+              tag=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^v?[0-9]+\.[0-9].prod-na?" | head -n1)
+              if [[ $tag =~ "v([0-9]+).([0-9]+).prod-na?" ]]; then
+                major="${BASH_REMATCH[1]}"
+                minor="${BASH_REMATCH[2]}"
+              fi
+              new="$major.$minor.$hotfix_version"
             ;;
           esac
-          new="$major.$minor"
 
           echo "Pre-release = $pre_release"
           if $pre_release
           then
-            pre_tag=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^v?[0-9]+\.[0-9]+(.rc[0-9]+)$suffix$" | head -n1)
-            regex="v([0-9]+).([0-9]+)(.rc([0-9]+)$suffix)"
-            if [[ $pre_tag =~ $regex ]]; then
-              build="${BASH_REMATCH[4]}"
+            if [[ ${{ env.version_bump }} == hotfix* ]];
+            then
+              pre_tag=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^v?[0-9]+\.[0-9]+\.[0-9]+(.rc[0-9]+)$suffix$" | head -n1)
+              regex="v([0-9]+).([0-9]+).([0-9]+)(.rc([0-9]+)$suffix)"
+              if [[ $pre_tag =~ $regex ]]; then
+                build="${BASH_REMATCH[5]}"
+              fi
+            else
+              pre_tag=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^v?[0-9]+\.[0-9]+(.rc[0-9]+)$suffix$" | head -n1)
+              regex="v([0-9]+).([0-9]+)(.rc([0-9]+)$suffix)"
+              if [[ $pre_tag =~ $regex ]]; then
+                build="${BASH_REMATCH[4]}"
+              fi
             fi
             echo found Pre-release Tag $pre_tag
 
@@ -107,9 +129,9 @@ jobs:
             else
               build="1";
             fi
-            new="$major.$minor.rc$build$suffix"
+            new="$new.rc$build$suffix"
           else 
-            new="$major.$minor$suffix"
+            new="$new$suffix"
           fi
 
           # prefix with 'v'
