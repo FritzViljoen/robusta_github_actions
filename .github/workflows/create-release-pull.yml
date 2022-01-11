@@ -93,7 +93,7 @@ jobs:
               new="$major.$minor"
             ;;
             hotfix*)
-              hotfix_version=echo ${{ env.version_bump }} | grep -Eo '[0-9]+$'
+              hotfix_version=$(echo ${{ env.version_bump }} | grep -Eo '[0-9]+$')
               tag=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^v?[0-9]+\.[0-9].prod-na?" | head -n1)
               if [[ $tag =~ "v([0-9]+).([0-9]+).prod-na?" ]]; then
                 major="${BASH_REMATCH[1]}"
