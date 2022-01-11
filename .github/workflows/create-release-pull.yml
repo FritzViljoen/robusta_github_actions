@@ -69,8 +69,8 @@ jobs:
             prod-eu)    suffix=.prod-eu ;;
           esac
 
-          # fetch tags
-          git fetch --tags
+#          # fetch tags
+#          git fetch --tags
 
           # get latest tag
           tag=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^v?[0-9]+\.[0-9]?" | head -n1)
