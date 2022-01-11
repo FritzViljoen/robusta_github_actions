@@ -6,8 +6,8 @@ require 'tempfile'
 base = ARGV[0] || 'next'
 head = ARGV[1] || 'edge'
 
-sha1 = "origin/#{base}"
-sha2 = "origin/#{head}"
+sha1 = base
+sha2 = head
 
 prev_sha1 = sha1
 
