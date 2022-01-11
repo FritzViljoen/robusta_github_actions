@@ -47,5 +47,4 @@ Tempfile.open('pull-request-message') do |message|
   message.rewind
 
   puts message.readlines
-  message.readlines
 end
