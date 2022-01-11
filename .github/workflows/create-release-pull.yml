@@ -101,6 +101,9 @@ jobs:
               fi
               new="$major.$minor.$hotfix_version"
             ;;
+            default)
+              new="$major.$minor"
+            ;;
           esac
 
           echo "Pre-release = $pre_release"
