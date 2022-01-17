@@ -48,7 +48,7 @@ jobs:
             *)
               echo "source_branch=staging-na" >> $GITHUB_ENV
             ;;
-          esac 
+          esac
 
       - name: Post to a slack channel
         uses: slackapi/slack-github-action@v1.16.0
@@ -130,7 +130,7 @@ jobs:
               build="1";
             fi
             new="$new.rc$build$suffix"
-          else 
+          else
             new="$new$suffix"
           fi
 
@@ -167,7 +167,7 @@ jobs:
             echo "::set-output name=message::[INFO] Both branches are the same. No action needed."
           fi
 
-      - name: Post to a slack channel
+      - name: Post Error to a slack channel
         uses: slackapi/slack-github-action@v1.16.0
         if: ${{ !contains(steps.create_pr.outputs.url, 'github') }}
         with:
@@ -175,5 +175,15 @@ jobs:
           slack-message: "github-actions: *:skull_and_crossbones:Pull request not created!!!:skull_and_crossbones:* \n
           ${{ steps.compare.outputs.message }} \n
           https://github.com/${{ github.repository }}/actions"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
+
+      - name: Post Success to a slack channel
+        uses: slackapi/slack-github-action@v1.16.0
+        if: ${{ contains(steps.create_pr.outputs.url, 'github') }}
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL }}
+          slack-message: "github-actions: Pull request created!!!\n
+          ${{ steps.create_pr.outputs.url }}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
