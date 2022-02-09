@@ -1,4 +1,4 @@
-name: Create Release CUrl
+name: Create Change Log
 
 on:
   workflow_dispatch:
@@ -37,20 +37,10 @@ jobs:
             *)          echo "source_branch=staging-na" >> $GITHUB_ENV;;
           esac
 
-      - name: Compile change log
-        id: compile_pr
-        run: |
-          output=$(ruby ./script/create-github-pr ${{ env.target_branch }} ${{ env.source_branch }})
-          output="${output//'%'/'%25'}"
-          output="${output//$'\n'/'%0A'}"
-          output="${output//$'\r'/'%0D'}"
-          echo "::set-output name=pr_body::$output"
-
       - name: Post PR Body to a slack channel
         uses: slackapi/slack-github-action@v1.16.0
         with:
-#          channel-id: ${{ github.event.inputs.slack_channel }}
-          channel-id: 'C8M8CC280'
-          slack-message: ${{ steps.compile_pr.outputs.pr_body }}"
+          channel-id: ${{ github.event.inputs.slack_channel }}
+          slack-message: ${{ $(ruby ./script/create-github-pr ${{ env.target_branch }} ${{ env.source_branch }}) }}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
