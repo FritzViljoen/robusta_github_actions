@@ -46,14 +46,11 @@ jobs:
           output="${output//$'\r'/'%0D'}"
           echo "::set-output name=pr_body::$output"
 
-      - name: Post PR Body to a slack
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":${{ steps.compile_pr.outputs.pr_body }}}' https://hooks.slack.com/services/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
-        
       - name: Post PR Body to a slack channel
         uses: slackapi/slack-github-action@v1.16.0
         with:
-          channel-id: ${{ github.event.inputs.slack_channel }}
+#          channel-id: ${{ github.event.inputs.slack_channel }}
+          channel-id: 'C8M8CC280'
           slack-message: ${{ steps.compile_pr.outputs.pr_body }}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
