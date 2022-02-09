@@ -38,10 +38,8 @@ Tempfile.open('pull-request-message') do |message|
     prev_sha1 = sha1
   end
 
-  message.write "### Migrations\n"
-  message.write "None\n" if migrations.empty?
-
-  migrations.each { |m| message.write "#{m}\n" }
+  # message.write "### Migrations\n"
+  # migrations.each { |m| message.write "#{m}\n" }
 
   message.rewind
   puts message.readlines
