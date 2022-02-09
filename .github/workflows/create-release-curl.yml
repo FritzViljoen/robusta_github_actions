@@ -1,0 +1,59 @@
+name: Create Release CUrl
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        type: choice
+        description: "target branch"
+        options:
+          - next-eu
+          - staging-na
+          - prod-na
+          - prod-eu
+      slack_channel:
+        type: string
+        description: "slack channel name or id"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      prerelease_branches: (next-eu, staging-na)
+      target_branch: ${{ github.event.inputs.target_branch }}
+      version_bump: ${{ github.event.inputs.version_bump }}
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: '0'
+
+      - name: Set source branch
+        run: |
+          case ${{ env.target_branch }} in
+            next-eu)    echo "source_branch=edge" >> $GITHUB_ENV;;
+            staging-na) echo "source_branch=next-eu" >> $GITHUB_ENV;;
+            *)          echo "source_branch=staging-na" >> $GITHUB_ENV;;
+          esac
+
+      - name: Compile change log
+        id: compile_pr
+        run: |
+          output=$(ruby ./script/create-github-pr ${{ env.target_branch }} ${{ env.source_branch }})
+          output="${output//'%'/'%25'}"
+          output="${output//$'\n'/'%0A'}"
+          output="${output//$'\r'/'%0D'}"
+          echo "::set-output name=pr_body::$output"
+
+      - name: Post PR Body to a slack channel
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"text":${{ steps.compile_pr.outputs.pr_body }}}' https://hooks.slack.com/services/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
+        
+
+        uses: slackapi/slack-github-action@v1.16.0
+        with:
+          channel-id: ${{ github.event.inputs.slack_channel }}
+          slack-message: ${{ steps.compile_pr.outputs.pr_body }}"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
