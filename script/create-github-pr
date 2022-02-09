@@ -11,7 +11,7 @@ sha2 = "origin/#{head}"
 
 prev_sha1 = sha1
 Tempfile.open('pull-request-message') do |message|
-  message.write "### Displaying all Pull Requests between #{base} and #{head}\n"
+  message.write " ### Displaying all Pull Requests between #{base} and #{head} ### \n"
   pull_requests = `git log --oneline #{sha1}..#{sha2} | grep Merge | awk -F' ' '{print $1,$5}'`.split(/\n/)
   migrations = []
 
@@ -27,7 +27,7 @@ Tempfile.open('pull-request-message') do |message|
     desc    = matches[2].strip
 
     commits = `git diff --name-only #{sha1} #{prev_sha1} | grep migrate`.split(/\n/)
-    has_migrations = commits.length > 0
+    has_migrations = commits.length.positive?
     migrations << "#{sha1}\t#{num}\t#{commits.length} migration(s)" if has_migrations
 
     if matches[2].to_i.nonzero?
@@ -38,8 +38,10 @@ Tempfile.open('pull-request-message') do |message|
     prev_sha1 = sha1
   end
 
-  # message.write "### Migrations\n"
-  # migrations.each { |m| message.write "#{m}\n" }
+  unless migrations.empty?
+    message.write " ### Migrations ### \n"
+    migrations.each { |m| message.write "#{m}\n" }
+  end
 
   message.rewind
   puts message.readlines
