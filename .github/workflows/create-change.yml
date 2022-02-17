@@ -72,7 +72,12 @@ jobs:
                       "type": "button",
                       "style": "danger",
                       "text": { "type": "plain_text", "text": "Create Pull Request" },
-                      "action_id": "create_pull_${{ env.target_branch }}"
+                      "action_id": "pull-${{ env.target_branch }}"
+                    },
+                    {
+                      "type": "button",
+                      "text": { "type": "plain_text", "text": "Cancel" },
+                      "action_id": "cancel"
                     }
                   ]
                 }
