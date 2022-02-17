@@ -11,17 +11,27 @@ sha2 = "origin/#{head}"
 
 prev_sha1 = sha1
 Tempfile.open('pull-request-message') do |message|
-  message.write " ### Displaying all Pull Requests between #{base} and #{head} ### \n"
   pull_requests = `git log --oneline #{sha1}..#{sha2} | grep Merge | awk -F' ' '{print $1,$5}'`.split(/\n/)
   migrations = []
+
+  puts pull_requests
+
+  if pull_requests.empty?
+    message.write " ### No Pull Requests between #{base} and #{head} ### \n"
+  else
+    message.write " ### Displaying all Pull Requests between #{base} and #{head} ### \n"
+  end
 
   pull_requests.reverse.each do |pr|
     sha1, num = pr.split(' ')
 
     jira_pr = `git show --format=medium #{sha1}`.scrub.strip
+
+
+    puts jira_pr
     matches = jira_pr.split("\n").last.match(/(?:RPLUS|FEATURE)[\s-]([^\s\|]+)(?:[\s\|]+)(.+)/i)
 
-    next unless matches
+    # next unless matches
 
     jira    = "RPLUS-#{matches[1]}"
     desc    = matches[2].strip
