@@ -1,2 +1,2 @@
 # robusta_github_actions
-test git fetch --tags
+what is dit doing here
