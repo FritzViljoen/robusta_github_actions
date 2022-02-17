@@ -21,7 +21,7 @@ Tempfile.open('pull-request-message') do |message|
     jira_pr = `git show --format=medium #{sha1}`.scrub.strip
     matches = jira_pr.split("\n").last.match(/(?:RPLUS|FEATURE)[\s-]([^\s\|]+)(?:[\s\|]+)(.+)/i)
 
-    next unless matches
+    # next unless matches
 
     jira    = "RPLUS-#{matches[1]}"
     desc    = matches[2].strip
