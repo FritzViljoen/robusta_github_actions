@@ -20,12 +20,9 @@ Tempfile.open('pull-request-message') do |message|
     message.write " ### Displaying all Pull Requests between #{base} and #{head} ### \n"
   end
 
-  # puts pull_requests
-
   pull_requests.reverse.each do |pr|
     sha1, num = pr.split(' ')
-
-    next unless num
+    next unless num.start_with?('#')
 
     desc = `git show --format=medium #{sha1}`.scrub.split("\n").last.strip
 
@@ -36,7 +33,6 @@ Tempfile.open('pull-request-message') do |message|
     migrations << "#{sha1}\t#{num}\t#{commits.length} migration(s)" if has_migrations
 
     text = "#{sha1}\t#{num}#{has_migrations ? ' *' : '  '}\t"
-
     if matches
       jira    = "RPLUS-#{matches[1]}"
       desc    = matches[2].strip
