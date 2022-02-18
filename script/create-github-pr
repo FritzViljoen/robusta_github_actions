@@ -11,37 +11,49 @@ sha2 = "origin/#{head}"
 
 prev_sha1 = sha1
 Tempfile.open('pull-request-message') do |message|
-  message.write "### Displaying all Pull Requests between #{base} and #{head}\n"
   pull_requests = `git log --oneline #{sha1}..#{sha2} | grep Merge | awk -F' ' '{print $1,$5}'`.split(/\n/)
   migrations = []
+
+  if pull_requests.empty?
+    message.write " ### No Pull Requests between #{base} and #{head} ### \n"
+  else
+    message.write " ### Displaying all Pull Requests between #{base} and #{head} ### \n"
+  end
+
+  # puts pull_requests
 
   pull_requests.reverse.each do |pr|
     sha1, num = pr.split(' ')
 
-    jira_pr = `git show --format=medium #{sha1}`.scrub.strip
-    matches = jira_pr.split("\n").last.match(/(?:RPLUS|FEATURE)[\s-]([^\s\|]+)(?:[\s\|]+)(.+)/i)
+    desc = `git show --format=medium #{sha1}`.scrub.split("\n").last.strip
 
-    next unless matches
+    matches = desc.match(/(?:RPLUS|FEATURE)[\s-]([^\s\|]+)(?:[\s\|]+)(.+)/i)
+    # next unless matches
 
-    jira    = "RPLUS-#{matches[1]}"
-    desc    = matches[2].strip
+    if matches
+      jira    = "RPLUS-#{matches[1]}"
+      desc    = matches[2].strip
 
-    commits = `git diff --name-only #{sha1} #{prev_sha1} | grep migrate`.split(/\n/)
-    has_migrations = commits.length > 0
-    migrations << "#{sha1}\t#{num}\t#{commits.length} migration(s)" if has_migrations
+      commits = `git diff --name-only #{sha1} #{prev_sha1} | grep migrate`.split(/\n/)
+      has_migrations = commits.length.positive?
+      migrations << "#{sha1}\t#{num}\t#{commits.length} migration(s)" if has_migrations
 
-    if matches[2].to_i.nonzero?
-      message.write "#{sha1}\t#{num}#{has_migrations ? ' *' : '  '}\t[#{jira}](https://jira.confluence.com/browse/#{jira}) _#{desc}_\n"
+      if matches[2].to_i.nonzero?
+        message.write "#{sha1}\t#{num}#{has_migrations ? ' *' : '  '}\t[#{jira}](https://jira.confluence.com/browse/#{jira}) _#{desc}_\n"
+      else
+        message.write "#{sha1}\t#{num}#{has_migrations ? ' *' : '  '}\t#{jira} _#{desc}_\n"
+      end
     else
-      message.write "#{sha1}\t#{num}#{has_migrations ? ' *' : '  '}\t#{jira} _#{desc}_\n"
+      message.write "#{sha1}\t#{num}#{has_migrations ? ' *' : '  '}\t #{desc}\n"
     end
+
     prev_sha1 = sha1
   end
 
-  message.write "### Migrations\n"
-  message.write "None\n" if migrations.empty?
-
-  migrations.each { |m| message.write "#{m}\n" }
+  unless migrations.empty?
+    message.write " ### Migrations ### \n"
+    migrations.each { |m| message.write "#{m}\n" }
+  end
 
   message.rewind
   puts message.readlines
