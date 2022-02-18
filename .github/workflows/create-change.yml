@@ -1,0 +1,85 @@
+name: Create Change Request
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        type: choice
+        description: "target branch"
+        options:
+          - next-eu
+          - staging-na
+          - prod-na
+          - prod-eu
+      slack_channel:
+        type: string
+        description: "slack channel name or id"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      target_branch: ${{ github.event.inputs.target_branch }}
+      slack_channel: ${{ github.event.inputs.slack_channel }}
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: '0'
+
+      - name: Set source branch
+        run: |
+          case ${{ env.target_branch }} in
+            next-eu)    echo "source_branch=edge" >> $GITHUB_ENV;;
+            staging-na) echo "source_branch=next-eu" >> $GITHUB_ENV;;
+            *)          echo "source_branch=staging-na" >> $GITHUB_ENV;;
+          esac
+
+      - name: Compile pull request
+        id: compile_pr
+        run: |
+          output=$(ruby ./script/create-github-pr ${{ env.target_branch }} ${{ env.source_branch }})
+          echo $output
+          output="${output//$'\n'/'\n'}"
+          output="${output//$'\r'/'\r'}"
+          output="${output//$'\t'/' '}"
+          output="${output//$' ### '/'*'}"
+          echo "::set-output name=pr_body::$output"
+
+      - name: Post Success to a slack channel
+        uses: slackapi/slack-github-action@v1.16.0
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
+        with:
+          channel-id: ${{ env.slack_channel }}
+          payload: |
+            {
+              "text": "GitHub Action build result:",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": { "type": "mrkdwn", "text": "*_PR Preview:_*" }
+                },
+                {
+                  "type": "section",
+                  "text": { "type": "mrkdwn", "text": "${{ steps.compile_pr.outputs.pr_body }}" }
+                },
+            	{
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "style": "danger",
+                      "text": { "type": "plain_text", "text": "Create Pull Request" },
+                      "action_id": "pull-${{ env.target_branch }}"
+                    },
+                    {
+                      "type": "button",
+                      "text": { "type": "plain_text", "text": "Cancel" },
+                      "action_id": "cancel"
+                    }
+                  ]
+                }
+              ]
+            }

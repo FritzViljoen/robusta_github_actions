@@ -21,6 +21,10 @@ on:
           - hotfix1
           - hotfix2
           - hotfix3
+          - dryrun
+      slack_channel:
+        type: string
+        description: "slack channel name or id"
 
 jobs:
   build:
@@ -39,24 +43,18 @@ jobs:
       - name: Set source branch
         run: |
           case ${{ env.target_branch }} in
-            next-eu)
-              echo "source_branch=edge" >> $GITHUB_ENV
-            ;;
-            staging-na)
-              echo "source_branch=next-eu" >> $GITHUB_ENV
-            ;;
-            *)
-              echo "source_branch=staging-na" >> $GITHUB_ENV
-            ;;
-          esac 
+            next-eu)    echo "source_branch=edge" >> $GITHUB_ENV;;
+            staging-na) echo "source_branch=next-eu" >> $GITHUB_ENV;;
+            *)          echo "source_branch=staging-na" >> $GITHUB_ENV;;
+          esac
 
-      - name: Post to a slack channel
-        uses: slackapi/slack-github-action@v1.16.0
-        with:
-          channel-id: ${{ secrets.SLACK_CHANNEL }}
-          slack-message: 'github-actions: Creating pull-request from ${{ env.source_branch }} to ${{ env.target_branch }}!'
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
+#      - name: Post to a slack channel
+#        uses: slackapi/slack-github-action@v1.16.0
+#        with:
+#          channel-id: ${{ github.event.inputs.slack_channel }}
+#          slack-message: 'github-actions: Creating a ${{ env.version_bump }} pull-request from ${{ env.source_branch }} to ${{ env.target_branch }}!'
+#        env:
+#          SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
 
       - name: Create tag
         id: create_tag
@@ -101,6 +99,9 @@ jobs:
             default)
               new="$major.$minor"
             ;;
+            dryrun)
+              new="$major.$minor"
+            ;;
           esac
 
           echo "Pre-release = $pre_release"
@@ -130,7 +131,7 @@ jobs:
               build="1";
             fi
             new="$new.rc$build$suffix"
-          else 
+          else
             new="$new$suffix"
           fi
 
@@ -139,6 +140,7 @@ jobs:
 
           # set outputs
           echo ::set-output name=new_tag::$new
+
 
       - name: Compile pull request
         id: compile_pr
@@ -149,7 +151,19 @@ jobs:
           output="${output//$'\r'/'%0D'}"
           echo "::set-output name=pr_body::$output"
 
+#      - name: Post PR Body to a slack channel
+#        uses: slackapi/slack-github-action@v1.16.0
+#        with:
+#          channel-id: ${{ github.event.inputs.slack_channel }}
+#          slack-message: "*${{ steps.create_tag.outputs.new_tag }} | Release [${{ env.target_branch }}]* \n
+#           ${{ steps.compile_pr.outputs.pr_body }}"
+#        env:
+#          SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
+
+
+
       - name: Create pull request
+        if: ${{ !contains(github.event.inputs.version_bump, 'dryrun') }}
         id: create_pr
         uses: devops-infra/action-pull-request@v0.4.2
         with:
@@ -159,6 +173,7 @@ jobs:
           source_branch: ${{ env.source_branch }}
           target_branch: ${{ env.target_branch }}
 
+
       - name: Comparing branches by revisions
         id: compare
         run: |
@@ -167,13 +182,25 @@ jobs:
             echo "::set-output name=message::[INFO] Both branches are the same. No action needed."
           fi
 
-      - name: Post to a slack channel
+
+      - name: Post Error to a slack channel
         uses: slackapi/slack-github-action@v1.16.0
         if: ${{ !contains(steps.create_pr.outputs.url, 'github') }}
         with:
-          channel-id: ${{ secrets.SLACK_CHANNEL }}
+          channel-id: ${{ github.event.inputs.slack_channel }}
           slack-message: "github-actions: *:skull_and_crossbones:Pull request not created!!!:skull_and_crossbones:* \n
           ${{ steps.compare.outputs.message }} \n
           https://github.com/${{ github.repository }}/actions"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
+
+
+      - name: Post Success to a slack channel
+        uses: slackapi/slack-github-action@v1.16.0
+        if: ${{ contains(steps.create_pr.outputs.url, 'github') }}
+        with:
+          channel-id: ${{ github.event.inputs.slack_channel }}
+          slack-message: "*github-actions: Pull request created.*\n
+          ${{ steps.create_pr.outputs.url }}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
