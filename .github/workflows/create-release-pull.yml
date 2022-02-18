@@ -48,7 +48,6 @@ jobs:
             *)          echo "source_branch=staging-na" >> $GITHUB_ENV;;
           esac
 
-
 #      - name: Post to a slack channel
 #        uses: slackapi/slack-github-action@v1.16.0
 #        with:
@@ -56,7 +55,6 @@ jobs:
 #          slack-message: 'github-actions: Creating a ${{ env.version_bump }} pull-request from ${{ env.source_branch }} to ${{ env.target_branch }}!'
 #        env:
 #          SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
-
 
       - name: Create tag
         id: create_tag
@@ -153,7 +151,6 @@ jobs:
           output="${output//$'\r'/'%0D'}"
           echo "::set-output name=pr_body::$output"
 
-
 #      - name: Post PR Body to a slack channel
 #        uses: slackapi/slack-github-action@v1.16.0
 #        with:
@@ -162,6 +159,7 @@ jobs:
 #           ${{ steps.compile_pr.outputs.pr_body }}"
 #        env:
 #          SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
+
 
 
       - name: Create pull request
