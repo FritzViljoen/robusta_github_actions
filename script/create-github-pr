@@ -24,8 +24,7 @@ Tempfile.open('pull-request-message') do |message|
 
   pull_requests.reverse.each do |pr|
     sha1, num = pr.split(' ')
-
-    next unless num
+    next unless num.start_with?('#')
 
     desc = `git show --format=medium #{sha1}`.scrub.split("\n").last.strip
 
