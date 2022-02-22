@@ -45,6 +45,7 @@ Tempfile.open('pull-request-message') do |message|
     end
 
     message.write "#{text} _#{desc}_\n"
+
     prev_sha1 = sha1
   end
 
