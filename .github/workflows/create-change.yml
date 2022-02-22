@@ -48,6 +48,25 @@ jobs:
           echo "::set-output name=pr_body::$output"
 
       - name: Post Success to a slack channel
+        if: ${{ contains(steps.compile_pr.outputs.pr_body, 'No Pull Requests') }}
+        uses: slackapi/slack-github-action@v1.16.0
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
+        with:
+          channel-id: ${{ env.slack_channel }}
+          payload: |
+            {
+              "text": "GitHub Action build result:",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": { "type": "mrkdwn", "text": "${{ steps.compile_pr.outputs.pr_body }}" }
+                }
+              ]
+            }
+
+      - name: Post Success to a slack channel
+        if: ${{ !contains(steps.compile_pr.outputs.pr_body, 'No Pull Requests' ) }}
         uses: slackapi/slack-github-action@v1.16.0
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
