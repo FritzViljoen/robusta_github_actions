@@ -20,33 +20,31 @@ Tempfile.open('pull-request-message') do |message|
     message.write " ### Displaying all Pull Requests between #{base} and #{head} ### \n"
   end
 
-  # puts pull_requests
-
   pull_requests.reverse.each do |pr|
     sha1, num = pr.split(' ')
+    next unless num.start_with?('#')
 
     desc = `git show --format=medium #{sha1}`.scrub.split("\n").last.strip
 
     matches = desc.match(/(?:RPLUS|FEATURE)[\s-]([^\s\|]+)(?:[\s\|]+)(.+)/i)
-    # next unless matches
 
+    commits = `git diff --name-only #{sha1} #{prev_sha1} | grep migrate`.split(/\n/)
+    has_migrations = commits.length.positive?
+    migrations << "#{sha1}\t#{num}\t#{commits.length} migration(s)" if has_migrations
+
+    text = "#{sha1}\t#{num}#{has_migrations ? ' *' : '  '}\t"
     if matches
       jira    = "RPLUS-#{matches[1]}"
       desc    = matches[2].strip
 
-      commits = `git diff --name-only #{sha1} #{prev_sha1} | grep migrate`.split(/\n/)
-      has_migrations = commits.length.positive?
-      migrations << "#{sha1}\t#{num}\t#{commits.length} migration(s)" if has_migrations
-
-      if matches[2].to_i.nonzero?
-        message.write "#{sha1}\t#{num}#{has_migrations ? ' *' : '  '}\t[#{jira}](https://jira.confluence.com/browse/#{jira}) _#{desc}_\n"
-      else
-        message.write "#{sha1}\t#{num}#{has_migrations ? ' *' : '  '}\t#{jira} _#{desc}_\n"
-      end
-    else
-      message.write "#{sha1}\t#{num}#{has_migrations ? ' *' : '  '}\t #{desc}\n"
+      text = if matches[2].to_i.nonzero?
+               "#{text} [#{jira}](https://jira.confluence.com/browse/#{jira})"
+             else
+               "#{text} #{jira}"
+             end
     end
 
+    message.write "#{text} _#{desc}_\n"
     prev_sha1 = sha1
   end
 
