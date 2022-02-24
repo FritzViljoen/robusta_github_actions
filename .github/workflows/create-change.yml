@@ -45,7 +45,7 @@ jobs:
           output="${output//$'\r'/'\r'}"
           output="${output//$'\t'/' '}"
           output="${output//$' ### '/'*'}"
-          output=output | cut -c -8
+          output=output | cut -c -2999
           echo "::set-output name=pr_body::$output"
 
       - name: Post compile pull request to a slack channel
