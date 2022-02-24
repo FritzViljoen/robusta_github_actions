@@ -54,5 +54,5 @@ Tempfile.open('pull-request-message') do |message|
   end
 
   message.rewind
-  puts message.readlines.truncate(29)
+  puts message.readlines
 end
